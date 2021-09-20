@@ -17,10 +17,7 @@ fn main() -> ! {
 
             skip = false;
             delay.delay_ms(half_period);
-            //This actualy makes the number counter - 1 ,but 
-            //i dont have to check for negative then. 
             counter = (counter + 1) % 8;
-            panic!("Hello, world!");
         }else{
             leds[counter].on().ok();
 

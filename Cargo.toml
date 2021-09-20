@@ -1,0 +1,10 @@
+[package]
+# name = "rust_stm32f3discovery"
+name = "led-roulette"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aux5 = { path = "auxiliary1" }

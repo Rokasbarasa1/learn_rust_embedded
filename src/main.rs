@@ -1,33 +1,24 @@
-#![deny(unsafe_code)]
+#![no_main]
 #![no_std]
-#![no_main] 
 
-use aux5::{entry, Delay, DelayMs, LedArray, OutputSwitch};
+#[allow(unused_imports)]
+use aux7::{entry, iprintln, ITM, RegisterBlock};
 
-#[entry] 
+#[entry]
 fn main() -> ! {
-    let (mut delay, mut leds): (Delay, LedArray) = aux5::init();
+    let gpioe = aux7::init().1;
 
-    let half_period = 50_u16;
+    // Turn on the North LED
+    gpioe.bsrr.write(|w| w.bs9().set_bit());
 
-    let mut counter: usize = 0;
-    let mut skip: bool = false;
-    loop{
-        if skip{
+    // Turn on the East LED
+    gpioe.bsrr.write(|w| w.bs11().set_bit());
 
-            skip = false;
-            delay.delay_ms(half_period);
-            counter = (counter + 1) % 8;
-        }else{
-            leds[counter].on().ok();
+    // Turn off the North LED
+    gpioe.bsrr.write(|w| w.br9().set_bit());
 
-            delay.delay_ms(half_period);
+    // Turn off the East LED
+    gpioe.bsrr.write(|w| w.br11().set_bit());
 
-            let counter_temp: usize;
-            counter_temp = (counter + 7) % 8;
-            leds[counter_temp].off().ok();
-
-            skip = true;
-        }
-    }
+    loop {}
 }

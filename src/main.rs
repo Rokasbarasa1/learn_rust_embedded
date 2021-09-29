@@ -1,41 +1,52 @@
-#![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
-use aux8::entry;
+use aux9::{entry, switch_hal::OutputSwitch, tim6};
+
+#[inline(never)]
+fn delay(tim6: &tim6::RegisterBlock, ms: u16) {
+    // Set the timer to go off in `ms` ticks
+    // 1 tick = 1 ms
+    tim6.arr.write(|w| w.arr().bits(ms));
+
+    // CEN: Enable the counter
+    tim6.cr1.modify(|_, w| w.cen().set_bit());
+
+    // Wait until the alarm goes off (until the update event occurs)
+    while !tim6.sr.read().uif().bit_is_set() {}
+
+    // Clear the update event flag
+    tim6.sr.modify(|_, w| w.uif().clear_bit());
+}
 
 #[entry]
 fn main() -> ! {
-    let (gpioe, rcc) = aux8::init();
+    let (leds, rcc, tim6) = aux9::init();
+    let mut leds = leds.into_array();
 
-    // enable the GPIOE peripheral
-    rcc.ahbenr.write(|w| w.iopeen().set_bit());
+    // Power on the TIM6 timer
+    rcc.apb1enr.modify(|_, w| w.tim6en().set_bit());
 
-    // configure the pins as outputs
-    gpioe.moder.write(|w| {
-        w.moder8().output();
-        w.moder9().output();
-        w.moder10().output();
-        w.moder11().output();
-        w.moder12().output();
-        w.moder13().output();
-        w.moder14().output();
-        w.moder15().output()
-    });
+    // OPM Select one pulse mode
+    // CEN Keep the counter disabled for now
+    tim6.cr1.write(|w| w.opm().set_bit().cen().clear_bit());
 
-    // Turn on all the LEDs in the compass
-    gpioe.odr.write(|w| {
-        w.odr8().set_bit();
-        w.odr9().set_bit();
-        w.odr10().set_bit();
-        w.odr11().set_bit();
-        w.odr12().set_bit();
-        w.odr13().set_bit();
-        w.odr14().set_bit();
-        w.odr15().set_bit()
-    });
+    // Configure the prescaler to have the counter operate at 1 KHz
+    // APB1_CLOCK = 8 MHz
+    // PSC = 7999
+    // 8 MHz / (7999 + 1) = 1 KHz
+    // The counter (CNT) will increase on every millisecond
+    tim6.psc.write(|w| w.psc().bits(7_999));
 
-    aux8::bkpt();
+    let ms = 50;
+    loop {
+        for curr in 0..8 {
+            let next = (curr + 1) % 8;
 
-    loop {}
+            leds[next].on().unwrap();
+            delay(tim6, ms);
+            leds[curr].off().unwrap();
+            delay(tim6, ms);
+        }
+    }
 }

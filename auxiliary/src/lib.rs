@@ -1,40 +1,19 @@
 //! Initialization code
 
-#![deny(warnings)]
 #![no_std]
 
-use panic_itm as _; // panic handler
+#[allow(unused_extern_crates)] // NOTE(allow) bug rust-lang/rust#53964
+extern crate panic_itm; // panic handler
 
-pub use cortex_m::{asm::bkpt, iprint, iprintln, peripheral::ITM};
+pub use cortex_m::asm::bkpt;
 pub use cortex_m_rt::entry;
+pub use f3::hal::stm32f30x::{gpioc, rcc};
 
-pub use stm32f3::stm32f303::{self, gpioc::RegisterBlock};
-pub use stm32f3_discovery::stm32f3xx_hal::pac::GPIOE;
-pub use stm32f3_discovery::{leds::Leds, stm32f3xx_hal};
+use f3::hal::stm32f30x::{self, GPIOE, RCC};
 
-use stm32f3xx_hal::prelude::*;
-pub use stm32f3xx_hal::stm32;
+pub fn init() -> (&'static gpioc::RegisterBlock, &'static rcc::RegisterBlock) {
+    // restrict access to the other peripherals
+    (stm32f30x::Peripherals::take().unwrap());
 
-#[inline(never)]
-pub fn init() -> (ITM, &'static RegisterBlock) {
-    let device_periphs = stm32::Peripherals::take().unwrap();
-    let mut reset_and_clock_control = device_periphs.RCC.constrain();
-
-    // initialize user leds
-    let mut gpioe = device_periphs.GPIOE.split(&mut reset_and_clock_control.ahb);
-    let _leds = Leds::new(
-        gpioe.pe8,
-        gpioe.pe9,
-        gpioe.pe10,
-        gpioe.pe11,
-        gpioe.pe12,
-        gpioe.pe13,
-        gpioe.pe14,
-        gpioe.pe15,
-        &mut gpioe.moder,
-        &mut gpioe.otyper,
-    );
-
-    let core_periphs = cortex_m::Peripherals::take().unwrap();
-    (core_periphs.ITM, unsafe { &*stm32f303::GPIOE::ptr() })
+    unsafe { (&*GPIOE::ptr(), &*RCC::ptr()) }
 }

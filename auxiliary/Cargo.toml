@@ -1,18 +1,14 @@
 [package]
-authors = [
-    "Jorge Aparicio <jorge@japaric.io>",
-    "Wink Saville <wink@saville.com",
-]
+authors = ["Jorge Aparicio <jorge@japaric.io>"]
 edition = "2018"
-name = "aux7"
-version = "0.2.0"
+name = "aux8"
+version = "0.1.0"
 
 [dependencies]
-cortex-m = "0.6.4"
-cortex-m-rt = "0.6.13"
-stm32f3-discovery = "0.6.0"
-panic-itm = "0.4.2"
+cortex-m = "0.6.3"
+cortex-m-rt = "0.6.3"
+panic-itm = "0.4.0"
 
-[dependencies.stm32f3]
-version = "0.12.1"
-features = ["stm32f303", "rt"]
+[dependencies.f3]
+features = ["rt"]
+version = "0.6.1"
